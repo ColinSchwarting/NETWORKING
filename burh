@@ -39,6 +39,91 @@ raw sockets
   avoids defense mechanisms
   sneaky squirel shit
   
+  
+NETWORK RECON
+(
+Active
+or
+Passive
+)AND(
+External
+or
+Internal
+)
+
+passive: possible tools
+            whois (built in command or website)
+                whois google.com
+            DNS queries
+                viewdns.info
+            jobsite
+                can create profiles on people based on public job listing
+            phone numbers
+                find personal info from phonenumber
+            google searches
+                can find info through google
+            passive OS fingerprinting
+                can determine what a system is based off of different factors such as ttl
+            
+           DIG:::
+            can use dig to find infomation from a domain
+                dig ccboe.net
+                dig ccboe.net SOA
+                              TXT
+                              ANY
+                dig -x 1.2.3.4 << reverse lookup
+                             ^^^^^^^this can specify what youre looking for from the site
+
+
+
+           wayback machine: scrapes webpages and saves them for future use
+           
+       NETWORK SCANNING LOCATIONS:
+          aim
+            wide range target scan
+            target specific
+          method 
+            single source scan
+            distributed
+            
+         types of scans
+            broadcast and ping sweep
+              for i in {1..254}; do ping -c 1 -W 1 10.1.1.$1 | grep 'from'; done
+           ack/window
+           rpc
+           ftp
+           decoy << send a scan from multiple IP address to obfuscate
+           os fingerprinting
+           version
+           protocol
+           discovery
+           idle scan << sends scans through zombie hosts (the most stealthy)
+      
+     nmap scans
+     nc [options] [target ip] [target port] 
+     man nc
+     curl cht.sh/nc
+     curl cht.sh/nmap
+     https://usermanual.wiki/pdf/nmapquickreferenceguide.1045482188/view <<<<<<<------ SHOWS NMAP SCAN OPTIONS
+     nmap 1.2.3.4/24 << nmap does know cidr notation
+     ipaddr
+     banner grabbing:  nc localhost 22 << can grab what the port is
+     if you see a FTP or a webserver try a wget
+     wget -r IP:PORT
+     if you see 6010, 6011, 6012: x11 forwarding
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
 

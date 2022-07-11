@@ -1,0 +1,45 @@
+What is the Berkeley Packet Filter, using tcpdump, to capture all packets with a ttl of 64 and less, utilizing the IPv4 or IPv6 Headers? 
+There should be 4880 packets.
+
+sudo tcpdump 'ip[8]'<=64 || 'ip6[7]<=64'
+
+what the hell is a socket, gunny?
+at a minimum, it's a ip and port
+  stream sockets
+    connection oriented, tcp, handshake and teardown
+  datagram sockets
+    connectionless, udp, quick and easy
+  raw sockets
+    just fucking send it
+    
+ 
+user space sockets:
+    --doesn't need elevated privs
+    
+kernel space sockets:
+    --DOES need sudo 
+
+user space applications/sockets
+   tcpdump to read file
+   nmap with no switches
+   netcat connect to listener
+   netcat to create listener above well know ports (1024+)
+   using /dev/tcp or /dev/udp to transmit data
+
+kernel space applications/sockets
+  tcpdump/wireshark to capture packets
+  nmap for os identification
+  netcat to create listener (0-1023)
+  scapy to craft packets
+  python to craft/modify for transmission
+  network devices using routing protocols
+    
+raw sockets
+  must include ipheaders and the next headers
+  avoids defense mechanisms
+  sneaky squirel shit
+  
+
+  
+
+ 

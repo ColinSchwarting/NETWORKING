@@ -100,6 +100,8 @@ passive: possible tools
            idle scan << sends scans through zombie hosts (the most stealthy)
       
      nmap scans
+     sudo nmap -PN -T5 {ip ######}
+     
      nc [options] [target ip] [target port] 
      man nc
      curl cht.sh/nc
@@ -110,11 +112,72 @@ passive: possible tools
      banner grabbing:  nc localhost 22 << can grab what the port is
      if you see a FTP or a webserver try a wget
      wget -r IP:PORT
+      >> eom [thing you got from internet.png]
+      
      if you see 6010, 6011, 6012: x11 forwarding
 
+STEP BY STEP (SO FAR)
+scan network:
+  sudo nmap -T4 -p 1-1023 [IP/CIDR]
+  ssh (probably tunnel) into device
+      host enumeration:
+          hostname
+          show interfaces
+          show arp?
+  MAP where you are!!!
+  MAP THE CONNECTING DEVICES
+  if you see a webserver:
+    wget -r IP:PORT
+    eom [whatever you got]
+
+---------------------------------------------------
+
+DATA TRANSFER
+
+TFTP: RFC 1350
+  UDP Transport
+  Small and simple comms
+  
+FTP: RFC 959
+  TCP Transport
+  Multiple TCP connections
+
+SFTP: 
+  TCP Transport (over SSH)
+  Uses encryption
+  
+FTPS:
+  Uses PKI authentication
+
+wget -r ftp://[ip addy]
+scp student@ip.add.ress.es:/home/userMyText.txt /MyLocal/directory
+##through a tunnel
+make a tunnel:
+  ssh student@172.16.82.106 -L 1111:localhost:22 -NT
+SCP through the tunnel:
+  scp -P 1111 student@localhost:secretstuff.txt /home/student
+
+NETCAT: Client to Listener File Transfer
+Listener: nc -l -p 9001 < file.txt 
+Client: nc 10.2.0.2 9001 > newfile.txt
 
 
+NAMED PIPE
+mknod mypipe p
+nc 10.1.02.2 9002 0< mypipe | nc 10.2.0.2 9001 1> mypipe
+nc -l -p 9002 < infile.txt
+nc - l -p 9001 > outfile.txt
 
+_-=-_-=-_-=-_-=-_-=-_-=-_-=-_-=-_
+priv IP:
+nc -lp [port 1]
+
+connected device:
+mkfifo PIPE
+nc [private ip] [port 1] > PIPE | nc -lp [port 2] < PIPE
+
+my device:
+nc [public facing IP] [port 2]
 
 
 

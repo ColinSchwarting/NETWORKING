@@ -179,13 +179,79 @@ nc [private ip] [port 1] > PIPE | nc -lp [port 2] < PIPE
 my device:
 nc [public facing IP] [port 2]
 
-
-
-
-
-
-
-
+--------------------------------
+TUNNELING!!!!!!
+openssh
+ssh? ssh! it's used for tunneling, mostly secure
+requires a server, must be installed and running
+has a user, host, and session key
+ssh port forwarding:
+   allows for tunneling of other services through ssh
+   provides insecure services encyrption
+  ex: ssh -p <optional alt port> <user>@<pivot IP> -L <local bind port>:<target ip>:<tgt port> -NT
+      ssh -L <local bind port>:<tgt IP>:<tgt port> -p <alt port> <user>@<pivot IP> -NT
+      ssh student@173.16.82.106 -L 1111:localhost:80 -NT
+      ssh -L 1111:localhost:80 student@172.16.82.106 -NT
+      
+      local port forwarding through a local port
+        ssh student@172.16.1.15 -L 1111:172.16.40.10:22 -NT
+        ssh student@localhost -p 1111 -L 2222:172.16.82.106:80 -NT
+        firefox localhost:2222
+        
+     ssh dynamic port forwarding
+        ssh -D <port> -p <alt port> <user>@<pivot ip> -NT
+        proxychains default port is 9050
+        creates a dynamic socks4 proxy 
+        example:
+          ssh student@172.16.82.106 -D 9050 -NT
+          
+          proxychains ./scan.sh
+          proxychains ssh student@10.10.0.40
+          
+        dynamic prot forwarding 2-step:
+          ssh student@172.16.82.106 -L 1111:10.10.0.40:22 -NT
+          ssh student@localhost -D 9050 -p 1111 -NT
+          proxychains curl ft[://www.onlineftp.ch
+          proxychains wget
+          proxychains [INTERNET RELATED STUFF IG]
+          
+     getting into a private host example:
+        ssh [connected box on public side] -L [myRandomport]:[private host IP]:[22 or 80 or whatever im trying to do] -NT
+       
+       TO ACCESS THE TUNNEL: ssh -p 1234 localhost (or wherever I made the tunnel from)
+     
+     dynamic connection (after inital tunnel has been established) 
+        ssh -p 1234 localhost -D 9050
+        FROM INTERNET HOST
+        proxychains nmap [private IP/cidr] -p 22 -PN << run as if the scan is being run on the private host 
+                            
+      ssh remote port forwarding: creates and port bind on the devices that im going to ssh on
+          ex:
+         Blue Host-01
+            ssh student@10.10.0.40 -R 1111:localhost:80 -NT
+            
+        remote and local port forwarding (only use remote forwarding if you can't directly ssh into it):
+         Private Host:
+         ssh student@172.16.82.106 -R 1111:localhost:22 -NT
+         
+         Internet Host:
+         ssh student@172.16.82.106 -L 2222:localhost:1111 -NT
+         
+         Internet Host: 
+         ssh localhost -p 2222
+        
+    -----------------------------------------------------------------------------
+    
+    IH --> A --> B
+    
+    ssh A <-- make sure you can
+    ssh B <-- make sure you can, else ssh A -L 2222:[Ip of B]:23
+    ON THE B BOX
+    ssh A -R [RHP]:localhost:22 < opens a random high port from the A box 
+    ON THE IH
+    ssh  A -L 1111:localhost:[THE SAME RHP]
+    
+    ssh localhost -p 1111
 
 
   

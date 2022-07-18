@@ -252,8 +252,116 @@ ssh port forwarding:
     ssh  A -L 1111:localhost:[THE SAME RHP]
     
     ssh localhost -p 1111
+    --------------------------------------------------------------------------
+   FILTERING:::::::::::
+   https://git.cybbh.space/net/public/raw/master/modules/networking/slides/images/T1_Filtering_Devices_Mechanisms&Layer.jpg
+   
+   whitelist < deny any any < restricts more
+   blacklist < allow any any
+   implicit rules versus explicit rules < default rules versus written out rules
+    network device operation modes << routed vs transparent
+    
+    intrusion defense systems
+    intrusion prevention systems
 
+    place the filters at the place closest to the origin of the traffic
+    
+    firewalls have rules
+    if it's not routed, it's in transparent mode
+    if it's directly connected, throw a IPS on it
+    if it's off to the side, it uses an IDS
+    IDS use signature
+    if its a switch, connect an ACL/PACL/VACL
+    if it's a host device, connect a host based firewall
+    
+   MAKE SURE YOU HAVE ALL RULES IN PLACE BEFORE THE DENY ANY ANY
+   
+  configure nftables:
+    nft add table [family] [table]
+   create the base chain
+    nft add chain [family] [table] {type [type] hook [hook] priority [priortiy] \; policy [policy] \;}
+   VIEW SLIDES FO MO DETAILS
+   add rules in the chain
+    nft add rule [family] [table] [chain] [matches (matches)] [statement]
+   modify nftsables
+    nft {list | flush} ruleset
+    nft {delete | list | flush} table [family] [table]
+    "                          " chain [family] [table] [chain]
+    
+   ------------------------------------------------------------------------------
+   
+   sudo iptables -L << default table to IPTables
+   sudo iptables -t nat -L << shows NAT iptables
+   sudo iptables -F << flushes only the filter table
+   sudo iptables -t nat -F << flushes only the nat table
+   sudo iptables -t mangle -L << look at the mangle table, this table changes who you look like for scans and shit
+   sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT << for inbound traffic from tcp to port 22, accept traffic
+    sudo iptables -A INPUT -p tcp --sport 22 -j ACCEPT
+     sudo iptables -A OUTPUT -p tcp --dport 22 -j ACCEPT
+      sudo iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT
 
+   sudo iptables -A INPUT -p tcp -m multiport --ports 6010,6011,6012 -j ACCEPT <<
+   
+   sudo iptables -A OUTPUT -p tcp -m multiport --ports 6010,6011,6012 -j ACCEPT <<
+   sudo iptables -P OUTPUT DROP << set outbound default to drop
+   sudo iptables -P INPUT DROP << set inbound default to drop
+   
+   sudo iptables -I INPUT -s 172.16.82.106 -j DROP  << insert a rule that drops traffic coming from 172.16.....
+   sudo iptables -I INPUT -d 172.16.82.106 -j DROP  << insert a rule that drops traffc going to 172.16.....
+   sudo iptables -L -n --line-numbers << lists rule numbers
+   sudo iptables -D #rule number#
+   sudo iptables -L -v << shows number of packets that are hit on each rule
+   sudo iptables -A INPUT -m state --state INVALID -j DROP << drops all traffic marked as INVALID
+   sudo iptables -A INPUT -i eth0 -p tcp --syn -m limit --limit 10/second -j ACCEPT << for packets coming in through eth0, drops all syn traffic that more than 10 per second (syn flood attacks and nmap scans) 
+   SAVE IPTABLES 
+    sudo iptabes-save > ipt.conf
+   DONT FLUSH THEM WHILE THE DEFAULT RULE IS DROP
+for CHAIN in INPUT FORWARD OUTPUT; do sudo iptables -P $CHAIN ACCEPT;done << turns all rules into accept
+  sudo iptables -F << flushes iptables
+  sudo iptables-restore ipt.conf -v << restores iptables from the save
+   
+   --=-=--=--=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-
+   sudo apt-get install nftables << installs
+
+   sudo nft list tables << lists the tables
+   
+   sudo nft add table ip COSC << adds a new table named COSC
+   
+   sudo nft flush table ip COSC << flushes any rules in the table
+   
+   sudo nft delete table ip COSC << deletes the table (no shit) 
+   
+   sudo nft add chain ip COSC input { type filter hook input priority 0 \; policy accept \; }
+   
+   sudo nft add chain ip COSC output { type filter hook output priority 0 \; policy accept \; }
+
+   sudo nft list ruleset
+   
+   sudo nft insert rule ip COSC input tcp dport 22 accept  <<< these set all 22 inbound and outbound to accept
+   sudo nft insert rule ip COSC input tcp sport 22 accept
+   sudo nft insert rule ip COSC output tcp dport 22 accept
+   sudo nft insert rule ip COSC output tcp sport 22 accept
+   
+   sudo nft list ruleset -ann
+
+      sudo nft add chain ip COSC output { type filter hook output priority 0 \; policy drop \; }  
+         sudo nft add chain ip COSC input { type filter hook output priority 0 \; policy drop \; } << now sets default policy to drop, SSH should still work
+         
+   sudo nft add rule ip COSC input ip saddr 172.16.82.112 drop << drops traffic from BLUEHOST-3
+   sudo nft add rule ip COSC output ip daddr 172.16.82.112 drop << drops traffic to BLUEHOST-3
   
+  sudo nft insert rule ip COSC input position 4 ip saddr 172.16.82.112 drop
+  sudo nft insert rule ip COSC output position 7 ip daddr 172.16.82.112 drop << the position is the handle on the top, this will read this rule first
+  sudo nft delete rule ip COSC output(or input) handle ##
 
+ sudo nft list ruleset > nftables.rules << SAVES RULES
  
+ sudo nft delete table ip COSC << deletes a table
+ sudo nft -f nftables.rules  << restores the rules
+ 
+
+   
+   
+   
+   
+   

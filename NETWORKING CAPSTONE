@@ -1,0 +1,102 @@
+ssh net3_student13@10.50.24.228 -L 31301:localhost:22 -NT 
+##From IH, this SSHs into the .228, opens listening port 31001 on myself connect to port 22 on the other device.
+DO HOST ENUMERATION STUFF, FIGURE OUT WHERE TO GO
+
+ssh net3_student13@localhost -D 9050 -p 31301 -NT
+##Well, now I need to scan, so I use the tunnel I just opened to allow for a dynamic tunnel for nmap.
+
+proxychains nmap -Pn 10.1.1.11 -p 21-23,80 -T4
+proxychains wget -r 10.1.1.11
+proxychains wget -r 10.1.1.11:1918
+proxychains wget -r 10.1.1.25
+
+ssh net3_student13@localhost -p 31301 -L 31302:10.1.1.11:23 -NT
+##Oh look, an IP that has telnet but not SSH. This connect me to the .228 IP and opens 31002 on internet host, which connects to telnet on the .11
+
+telnet localhost 31302
+##Through the newly established port, this connects to telnet on the .11
+
+##Write a sender tcp to a box? Okay!
+##On IH, go to /socket.d, sudo nano streamSENDER.py
+##Make sure the IP is the box you want to send it to, the port is the listening port on the box and the message is whatever it wants
+##proxychains ./streamSENDER.py
+
+##Another box without telnet? No problem!
+ssh net3_student13@localhost -p 31301 -L 31303:10.1.1.33:23 -NT
+## This connect to CP1 and opens a new listening port on the IH on port 31303 which connects to 10.1.1.33 via port 23
+
+##RIPv2 is running through this IP. Filter on this port!
+tcpdump -vv port 520
+##This looks at traffic verbously at a specific port
+
+##Oh shucks, I found a new pivot point coming off the IH. 
+##I need to scan it but make myself look like a cisco device. 
+sudo iptables -t mangle -A POSTROUTING -j TTL --ttl-set 255
+##Now my TTL is 255 and I look like cisco.
+nmap -Pn -T5 -p- 10.50.27.11
+##Just hit a quick port scan.
+##Do some ping sweeps
+
+##I can SSH onto the box, but I want my tools on it, so I'm going to set up some tunnels.
+ssh net3_student13@10.50.27.11 -p 7777 -L 31304:localhost:7777 -NT
+##The above tunnel creates a standard forward tunnel to 10.50.27.11 using it's alternate SSH ports
+ssh net3_student13@localhost -D 9050 -p 31304 -NT
+##The above tunnel is a dynamic tunnel to let me use my tools.
+
+##In a SSH session on the 10.50.27.11, I ran ifconfig and then a ping sweep of the connected network.
+##Then in a IH session, use the proxychains to nmap scan the connected IPs.
+proxychains nmap -T4 21-23,80 10.2.2.6,7,14 -p 21-23,80 
+
+##So I found a box that has credentials different than my own as well as SSH runnig on a higher port. 
+##It has telnet running, which should allow me to view traffic unencrypted.
+##I'll go to the 10.50.27.11 and use TCPDUMP to view traffic
+tcpdump -XXvv port 23
+##Ran this on the 10.50.27.11 (which has an internal IP of 10.2.2.6) which shows all telnet traffic.
+##Got the password from this for the other box with different creds (10.2.2.7) (pwd: Netlifx and Chill)
+
+ssh net3_student13@localhost -p 31304 -L 31305:10.2.2.7:23 -NT
+##The above tunnel is going connecting to the 10.50.27.11 via port 31304 (opened earlier), opens port 31305 on myself.
+##It then connects to port 23 on 10.2.2.7
+telnet localhost 31305 
+##This connects to the next box via telnet.
+##When on the new box, passive recon time. 
+##ifconfig, netstat -antp, etcetera
+
+##find the internal SSH port and now you need to do a reverse tunnel
+ssh net3_student13@10.2.2.6 -p 7777 -R 31306:localhost:2222 -NT
+##The above tunnel, from .7, connect to the .6 via it's alternate SSH port, opens a new port on the .6 which connects to the .7's alternate port
+
+ssh net3_student13@localhost -p 31304 -L 31307:localhost:31306  -NT
+##This bridges the gap from the INTERNETHOST to the .7
+##This connects to the .6, then opens a listening port (31307) on the IH 
+##This connects to the listening port on the .6 (31306), which jumps to the .7
+ssh net3_student13@localhost -p 31307 
+##jumps to capstone 07
+
+##Make the next dynamic tunnel
+ssh net3_student13@localhost -D 9050 -p 31307 -NT
+
+##From internet host, scan the new hosts via proxychains on the .7
+proxychains nmap -T4 10.10.10.1,129,167,140,182 -p 21-23,80 
+proxychains wget -r (ALL the ips that have stuff on them)
+
+##Found hosts with alt  SSH ports.
+
+##Going to create a tunnel that goes from IH to the 10.10.10.140
+ssh net3_student13@localhost -p 31307 -L 31308:10.10.10.140:301 -NT
+
+##Make a new dynamic tunnel to use your tools on it
+ssh net3_student13@localhost -D 9050 -p 31308 -NT
+
+##From the 10.10.10.140, perform passive recon
+##From the proxychains, nmap the connected hosts
+##proxychains wget -r 192.168.whatever.whocares:webserver port being used
+
+##Need a new tunnel to 10.10.10.167
+##Basically just make a identical forward tunnel to the previously used one(see lines 85-89)
+##HOW TO SCP: echo "proxychains scp tgt@192.168.1.10:/home/tgt/secret.txt . (use a -P # to specify a port number)
+               proxychains scp net3_student13@192.168.10.101:/usr/share/cctc/capstone-analysis.pcap .
+##make a new forward port and a new dynamic tunnel, remember to update port numbers
+
+##Go to next box, new forward tunnel 
+ssh net3_student13@localhost -p 31307 -L 31310:10.10.10.182:504 -NT
